@@ -1,60 +1,80 @@
 <!DOCTYPE html><html lang="en">
-   <script>
-    var query = window.location.search;
-    var back_redirect_back_link = 'https://wellnessdaily.lifestyle/back' + query;
-    history.pushState({}, '', location.href);
-    history.pushState({}, '', location.href);
-    window.onpopstate = function () {
-      setTimeout(function () {
-        location.href = back_redirect_back_link;
-      }, 1);
-    };
-  </script>
-  	<script>
-// Função para obter parâmetros da URL
-function getURLParameter(name) {
- return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
-}
+ <script>
+(function () {
+  'use strict';
 
-// Função para remover um parâmetro específico da URL
-function removeURLParameter(url, parameter) {
- var urlparts = url.split('?');
- if (urlparts.length >= 2) {
-  var prefix = encodeURIComponent(parameter) + '=';
-  var pars = urlparts[1].split(/[&;]/g);
-  for (var i = pars.length; i-- > 0;) {
-   if (pars[i].lastIndexOf(prefix, 0) !== -1) {
-    pars.splice(i, 1);
-   }
+  var query = window.location.search;
+  var backRedirectLink = 'https://wellnessdaily.lifestyle/back' + query;
+
+  // Evita registrar o mesmo redirecionamento várias vezes.
+  if (window.__backRedirectInitialized) return;
+  window.__backRedirectInitialized = true;
+
+  history.pushState({ backRedirectGuard: 1 }, '', location.href);
+  history.pushState({ backRedirectGuard: 2 }, '', location.href);
+
+  window.addEventListener('popstate', function () {
+    window.setTimeout(function () {
+      window.location.href = backRedirectLink;
+    }, 1);
+  });
+})();
+</script>
+
+<script>
+(function () {
+  'use strict';
+
+  function getURLParameter(name) {
+    return new URLSearchParams(window.location.search).get(name);
   }
-  return urlparts[0] + (pars.length > 0 ? '?' + pars.join('&') : '');
- }
- return url;
-}
 
-// Verifica se o usuário já foi redirecionado anteriormente
-if (localStorage.getItem('userRedirected') === 'true') {
- // Redireciona o usuário para outra página (por exemplo, página inicial)
- window.location.href = "https://www.amazon.com/dp/B0C6BSPQW7
-} else if (localStorage.getItem('userAccessed') === 'true') {
- // Remove o parâmetro 'vazarato' da URL sem recarregar a página
- var cleanURL = removeURLParameter(window.location.href, 'vazarato');
- history.replaceState(null, null, cleanURL);
-} else {
- // Verifica se a página foi acessada com o parâmetro correto
- if (getURLParameter('vazarato') !== 'true') {
-  // Armazena no localStorage que o usuário foi redirecionado
-  localStorage.setItem('userRedirected', 'true');
-  // Redireciona o usuário para outra página (por exemplo, página inicial)
-  window.location.href = "https://www.amazon.com/dp/B0C6BSPQW7";
- } else {
-  // Armazena no localStorage que o usuário acessou a página corretamente
+  function removeURLParameter(url, parameter) {
+    var parsedURL = new URL(url);
+    parsedURL.searchParams.delete(parameter);
+
+    return parsedURL.pathname + parsedURL.search + parsedURL.hash;
+  }
+
+  var amazonURL = 'https://www.amazon.com/dp/B0C6BSPQW7';
+  var userRedirected = localStorage.getItem('userRedirected') === 'true';
+  var userAccessed = localStorage.getItem('userAccessed') === 'true';
+  var validParameter = getURLParameter('vazarato') === 'true';
+
+  if (userRedirected) {
+    window.location.replace(amazonURL);
+    return;
+  }
+
+  if (userAccessed) {
+    var cleanURL = removeURLParameter(
+      window.location.href,
+      'vazarato'
+    );
+
+    if (cleanURL !== window.location.pathname +
+        window.location.search + window.location.hash) {
+      history.replaceState(null, '', cleanURL);
+    }
+
+    return;
+  }
+
+  if (!validParameter) {
+    localStorage.setItem('userRedirected', 'true');
+    window.location.replace(amazonURL);
+    return;
+  }
+
   localStorage.setItem('userAccessed', 'true');
-  // Remove o parâmetro 'vazarato' da URL sem recarregar a página
-  var cleanURL = removeURLParameter(window.location.href, 'vazarato');
-  history.replaceState(null, null, cleanURL);
- }
-}
+
+  var cleanURL = removeURLParameter(
+    window.location.href,
+    'vazarato'
+  );
+
+  history.replaceState(null, '', cleanURL);
+})();
 </script>
   <head>
   <script type="text/javascript" src="js/pretrack.js"></script>
